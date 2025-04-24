@@ -50,6 +50,13 @@ def get_connection():
 conn = get_connection()
 
 # -------------------------------
+# Cached SQL Query Execution
+# -------------------------------
+@st.cache_data(show_spinner=False)
+def run_query(sql):
+    return pd.read_sql_query(sql, conn)
+
+# -------------------------------
 # Interactive Table Descriptions
 # -------------------------------
 with st.expander("📚 Table Descriptions", expanded=False):
@@ -102,9 +109,8 @@ Main table with crime incidents.
 # Table List Viewer
 # -------------------------------
 with st.expander("🗂 Available Tables", expanded=False):
-    tables_df = pd.read_sql("SELECT name FROM sqlite_master WHERE type='table';", conn)
+    tables_df = run_query("SELECT name FROM sqlite_master WHERE type='table';")
     st.dataframe(tables_df, use_container_width=True)
-    table_names = tables_df['name'].tolist()
 
 # -------------------------------
 # SQL Query Input
@@ -117,7 +123,7 @@ with st.form("sql_query_form"):
 
 if submit_query:
     try:
-        df = pd.read_sql_query(query, conn)
+        df = run_query(query)
         st.success("✅ Query executed successfully!")
         st.dataframe(df, use_container_width=True)
     except Exception as e:
