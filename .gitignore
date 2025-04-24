@@ -1,0 +1,33 @@
+# Ignore the entire CrimeSync folder
+crimeSync/
+
+# Ignore Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+**/.ipynb_checkpoints/
+
+# Python bytecode and cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+
+# IDE/editor folders
+.vscode/
+.idea/
+
+# OS metadata files
+.DS_Store
+Thumbs.db
+
+# Streamlit cache and logs
+.streamlit/
+logs/
+
+# SQLite DBs (optional)
+*.db
