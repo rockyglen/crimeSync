@@ -14,7 +14,8 @@ st.title("🚓 CrimeSync: Crime Data Explorer")
 # -------------------------------
 @st.cache_resource
 def get_connection():
-    return sqlite3.connect("crime_data.db")
+    return sqlite3.connect("crime_data.db", check_same_thread=False)
+
 
 conn = get_connection()
 
