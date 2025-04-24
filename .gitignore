@@ -29,5 +29,4 @@ Thumbs.db
 .streamlit/
 logs/
 
-# SQLite DBs (optional)
-*.db
+
