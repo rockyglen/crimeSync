@@ -112,4 +112,4 @@ if submit_query:
 # Footer
 # -------------------------------
 st.markdown("---")
-st.caption("Made with ❤️ using Streamlit | CrimeSync © 2025")
+
