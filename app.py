@@ -50,38 +50,53 @@ def get_connection():
 conn = get_connection()
 
 # -------------------------------
-# Table Descriptions
+# Interactive Table Descriptions
 # -------------------------------
 with st.expander("📚 Table Descriptions", expanded=False):
-    st.markdown("""
-**1. `crime_type`**  
+    selected_table = st.selectbox("Select a table to view its description:", [
+        "crime_type", "location", "weapon", "crime_data"
+    ])
+
+    table_descriptions = {
+        "crime_type": """
+**`crime_type`**
+
 Stores crime categories and descriptions.  
 - `Crm_Cd` (NUMERIC): Unique crime code.  
 - `Crm_Cd_Desc` (VARCHAR): Description of the crime.
+""",
+        "location": """
+**`location`**
 
-**2. `location`**  
 Details where crimes occurred.  
 - `Premis_Cd` (NUMERIC): Code for the location type.  
 - `Premis_Desc` (VARCHAR): Description of the premise (e.g., Street, Residence).
+""",
+        "weapon": """
+**`weapon`**
 
-**3. `weapon`**  
 Lists weapon types used in crimes.  
 - `Weapon_Used_Cd` (NUMERIC): Weapon code.  
 - `Weapon_Desc` (VARCHAR): Description of the weapon.
+""",
+        "crime_data": """
+**`crime_data`**
 
-**4. `crime_data`**  
-The main table containing crime incidents.  
-- `DR_NO`: Unique report ID.  
-- `Date_Rptd`, `DATE_OCC`: Dates of report and occurrence.  
-- `TIME_OCC`: Time (24-hour format).  
-- `AREA`, `AREA_NAME`: Geographic code and name.  
-- `Crm_Cd`: Crime type code (FK to `crime_type`).  
-- `Vict_Age`, `Vict_Sex`: Age and sex of the victim.  
-- `Premis_Cd`: Location type (FK to `location`).  
-- `Weapon_Used_Cd`: Weapon used (FK to `weapon`).  
-- `Status`: Status code (e.g., IC, AO).  
-- `LOCATION`, `LAT`, `LON`: Full location and coordinates.
-    """)
+Main table with crime incidents.  
+- `DR_NO`: Unique report ID  
+- `Date_Rptd`, `DATE_OCC`: Report and occurrence dates  
+- `TIME_OCC`: 24-hour time of occurrence  
+- `AREA`, `AREA_NAME`: Area codes and names  
+- `Crm_Cd`: Crime code (FK to `crime_type`)  
+- `Vict_Age`, `Vict_Sex`: Victim details  
+- `Premis_Cd`: Premise code (FK to `location`)  
+- `Weapon_Used_Cd`: Weapon code (FK to `weapon`)  
+- `Status`: Status code (e.g., IC, AO)  
+- `LOCATION`, `LAT`, `LON`: Location description and coordinates
+"""
+    }
+
+    st.markdown(table_descriptions[selected_table])
 
 # -------------------------------
 # Table List Viewer
