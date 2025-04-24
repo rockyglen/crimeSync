@@ -17,27 +17,14 @@ with st.expander("📄 Dataset Description", expanded=True):
 **Provider**: Los Angeles Police Department (LAPD) via Data.gov  
 **Standards**: Compliant with NIBRS (National Incident-Based Reporting System)
 
----
+This dataset contains detailed incident-level crime reports collected by LAPD from 2020 to the present.  
+It includes the type of crime, time/date, victim demographics, weapons used, and geolocation.
 
-This dataset contains detailed incident-level crime reports collected by the Los Angeles Police Department (LAPD) from 2020 to the present. The data has been made publicly available to promote transparency, aid public safety analysis, and support data-driven decision-making by researchers, journalists, policymakers, and community members.
-
-The database captures structured records of reported crimes, including:
-- The **type of crime**
-- **Time and date** of occurrence and report
-- **Location** of the incident (down to latitude/longitude)
-- **Victim demographics** (age, sex)
-- **Weapons involved**
-- **Administrative status** codes
-
-To ensure data normalization and reduce redundancy, the database is implemented in **Boyce-Codd Normal Form (BCNF)** and split into logically related tables such as `crime_data`, `crime_type`, `location`, and `weapon`.
-
-Key use cases for this database include:
-- Analyzing crime trends over time or geography
-- Understanding correlations between crime types and weapon use
-- Investigating how location types affect crime frequency
-- Generating custom reports through SQL-based queries
-
-The `crime_data` table acts as the primary fact table and references normalized lookup tables to enable flexible, scalable analysis.
+The schema is normalized into:
+- `crime_data`: Facts table (date, victim, weapon, location, status)
+- `crime_type`: Crime category descriptions
+- `weapon`: Weapon type descriptions
+- `location`: Premise/location type
     """)
 
 # -------------------------------
@@ -49,11 +36,8 @@ def get_connection():
 
 conn = get_connection()
 
-# -------------------------------
-# Cached SQL Query Execution
-# -------------------------------
 @st.cache_data(show_spinner=False)
-def run_query(sql):
+def run_query(sql: str) -> pd.DataFrame:
     return pd.read_sql_query(sql, conn)
 
 # -------------------------------
@@ -68,41 +52,36 @@ with st.expander("📚 Table Descriptions", expanded=False):
         "crime_type": """
 **`crime_type`**
 
-Stores crime categories and descriptions.  
-- `Crm_Cd` (NUMERIC): Unique crime code.  
-- `Crm_Cd_Desc` (VARCHAR): Description of the crime.
+- `Crm_Cd` (NUMERIC): Unique crime code  
+- `Crm_Cd_Desc` (VARCHAR): Description of the crime
 """,
         "location": """
 **`location`**
 
-Details where crimes occurred.  
-- `Premis_Cd` (NUMERIC): Code for the location type.  
-- `Premis_Desc` (VARCHAR): Description of the premise (e.g., Street, Residence).
+- `Premis_Cd` (NUMERIC): Location type code  
+- `Premis_Desc` (VARCHAR): Location description (e.g., Street, Residence)
 """,
         "weapon": """
 **`weapon`**
 
-Lists weapon types used in crimes.  
-- `Weapon_Used_Cd` (NUMERIC): Weapon code.  
-- `Weapon_Desc` (VARCHAR): Description of the weapon.
+- `Weapon_Used_Cd` (NUMERIC): Weapon type code  
+- `Weapon_Desc` (VARCHAR): Weapon description
 """,
         "crime_data": """
 **`crime_data`**
 
-Main table with crime incidents.  
-- `DR_NO`: Unique report ID  
-- `Date_Rptd`, `DATE_OCC`: Report and occurrence dates  
-- `TIME_OCC`: 24-hour time of occurrence  
-- `AREA`, `AREA_NAME`: Area codes and names  
-- `Crm_Cd`: Crime code (FK to `crime_type`)  
-- `Vict_Age`, `Vict_Sex`: Victim details  
-- `Premis_Cd`: Premise code (FK to `location`)  
-- `Weapon_Used_Cd`: Weapon code (FK to `weapon`)  
-- `Status`: Status code (e.g., IC, AO)  
-- `LOCATION`, `LAT`, `LON`: Location description and coordinates
+- `DR_NO`: Report ID  
+- `Date_Rptd`, `DATE_OCC`: Date reported / occurred  
+- `TIME_OCC`: Time of occurrence (24h)  
+- `AREA`, `AREA_NAME`: Crime area code / name  
+- `Crm_Cd`: Crime type (FK to `crime_type`)  
+- `Vict_Age`, `Vict_Sex`: Victim age / sex  
+- `Premis_Cd`: Location type (FK to `location`)  
+- `Weapon_Used_Cd`: Weapon used (FK to `weapon`)  
+- `Status`: Report status  
+- `LOCATION`, `LAT`, `LON`: Address and coordinates
 """
     }
-
     st.markdown(table_descriptions[selected_table])
 
 # -------------------------------
@@ -113,9 +92,100 @@ with st.expander("🗂 Available Tables", expanded=False):
     st.dataframe(tables_df, use_container_width=True)
 
 # -------------------------------
+# Predefined Expert Queries
+# -------------------------------
+with st.expander("🧠 Explore Predefined Expert Queries", expanded=True):
+
+    query_options = {
+        "Top 10 Crime Types in 2023": {
+            "query": """
+SELECT ct.Crm_Cd_Desc AS Crime_Type, COUNT(*) AS Total_Incidents
+FROM crime_data cd
+JOIN crime_type ct ON cd.Crm_Cd = ct.Crm_Cd
+WHERE substr(cd.DATE_OCC, 1, 4) = '2023'
+GROUP BY ct.Crm_Cd_Desc
+ORDER BY Total_Incidents DESC
+LIMIT 10;
+""",
+            "description": "Shows the most frequently reported crime types in the year 2023."
+        },
+        "Top 5 Areas with Most Violent Crimes (2023)": {
+            "query": """
+SELECT 
+    cd.AREA_NAME,
+    COUNT(*) AS Total_Violent_Crimes,
+    ROUND(AVG(cd.Vict_Age), 1) AS Avg_Victim_Age
+FROM crime_data cd
+JOIN crime_type ct ON cd.Crm_Cd = ct.Crm_Cd
+WHERE substr(cd.DATE_OCC, 1, 4) = '2023'
+  AND ct.Crm_Cd_Desc LIKE '%ASSAULT%'
+GROUP BY cd.AREA_NAME
+ORDER BY Total_Violent_Crimes DESC
+LIMIT 5;
+""",
+            "description": "Top 5 areas with the most assault-related crimes in 2023 with victim age averages."
+        },
+        "Weapon Use by Area (Top 5 Areas, 2022–2023)": {
+            "query": """
+WITH TopAreas AS (
+    SELECT AREA
+    FROM crime_data
+    WHERE Weapon_Used_Cd IS NOT NULL
+      AND substr(DATE_OCC, 1, 4) IN ('2022', '2023')
+    GROUP BY AREA
+    ORDER BY COUNT(*) DESC
+    LIMIT 5
+)
+SELECT 
+    cd.AREA_NAME,
+    w.Weapon_Desc,
+    COUNT(*) AS Weapon_Incidents
+FROM crime_data cd
+JOIN weapon w ON cd.Weapon_Used_Cd = w.Weapon_Used_Cd
+WHERE cd.Weapon_Used_Cd IS NOT NULL
+  AND substr(cd.DATE_OCC, 1, 4) IN ('2022', '2023')
+  AND cd.AREA IN (SELECT AREA FROM TopAreas)
+GROUP BY cd.AREA_NAME, w.Weapon_Desc
+ORDER BY cd.AREA_NAME, Weapon_Incidents DESC;
+""",
+            "description": "Weapon use breakdown across top 5 crime-heavy areas for 2022–2023."
+        },
+        "Crime Count by Gender in 2023": {
+            "query": """
+SELECT Vict_Sex, COUNT(*) AS Total_Reports
+FROM crime_data
+WHERE substr(DATE_OCC, 1, 4) = '2023'
+GROUP BY Vict_Sex;
+""",
+            "description": "Shows how crime reports in 2023 break down by victim gender."
+        },
+        "Most Dangerous Times of Day (2023)": {
+            "query": """
+SELECT TIME_OCC / 100 AS Hour_Block, COUNT(*) AS Reports
+FROM crime_data
+WHERE substr(DATE_OCC, 1, 4) = '2023'
+GROUP BY Hour_Block
+ORDER BY Reports DESC
+LIMIT 10;
+""",
+            "description": "Identifies hours of the day with highest crime activity in 2023."
+        }
+    }
+
+    selected_example = st.selectbox("Choose a predefined query to run:", list(query_options.keys()))
+    st.markdown(f"**Description:** {query_options[selected_example]['description']}")
+
+    if st.button("Run Selected Query"):
+        try:
+            df = run_query(query_options[selected_example]["query"])
+            st.dataframe(df, use_container_width=True)
+        except Exception as e:
+            st.error(f"❌ Error: {e}")
+
+# -------------------------------
 # SQL Query Input
 # -------------------------------
-st.markdown("### 🔍 Run Custom SQL Query")
+st.markdown("### 🛠️ Run Custom SQL Query")
 
 with st.form("sql_query_form"):
     query = st.text_area("Enter SQL Query", "SELECT * FROM crime_data LIMIT 10;")
