@@ -6,7 +6,7 @@ import pandas as pd
 # App Configuration
 # -------------------------------
 st.set_page_config(page_title="CrimeSync", layout="wide")
-st.title("🚓 CrimeSync: Crime Data Explorer")
+st.title("CrimeSync: Crime Data Explorer")
 
 # -------------------------------
 # Dataset Description
@@ -204,3 +204,9 @@ if submit_query:
 # -------------------------------
 st.markdown("---")
 
+st.markdown("""
+**Created by**  
+- AjitKumar Senthil Kumar  
+- Marian Glen Louis  
+- Vaishak Muralidharan
+""")
