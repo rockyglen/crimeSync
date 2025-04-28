@@ -40,7 +40,6 @@ conn = get_connection()
 def run_query(sql: str) -> pd.DataFrame:
     return pd.read_sql_query(sql, conn)
 
-
 # -------------------------------
 # Table List Viewer
 # -------------------------------
@@ -91,8 +90,6 @@ with st.expander("📚 Table Descriptions", expanded=False):
 """
     }
     st.markdown(table_descriptions[selected_table])
-
-
 
 # -------------------------------
 # Predefined Expert Queries
@@ -177,10 +174,12 @@ LIMIT 10;
 
     selected_example = st.selectbox("Choose a predefined query to run:", list(query_options.keys()))
     st.markdown(f"**Description:** {query_options[selected_example]['description']}")
+    st.code(query_options[selected_example]['query'], language='sql')
 
     if st.button("Run Selected Query"):
         try:
             df = run_query(query_options[selected_example]["query"])
+            st.success("✅ Query executed successfully!")
             st.dataframe(df, use_container_width=True)
         except Exception as e:
             st.error(f"❌ Error: {e}")
