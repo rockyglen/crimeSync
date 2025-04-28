@@ -40,6 +40,14 @@ conn = get_connection()
 def run_query(sql: str) -> pd.DataFrame:
     return pd.read_sql_query(sql, conn)
 
+
+# -------------------------------
+# Table List Viewer
+# -------------------------------
+with st.expander("🗂 Available Tables", expanded=False):
+    tables_df = run_query("SELECT name FROM sqlite_master WHERE type='table';")
+    st.dataframe(tables_df, use_container_width=True)
+
 # -------------------------------
 # Interactive Table Descriptions
 # -------------------------------
@@ -84,12 +92,7 @@ with st.expander("📚 Table Descriptions", expanded=False):
     }
     st.markdown(table_descriptions[selected_table])
 
-# -------------------------------
-# Table List Viewer
-# -------------------------------
-with st.expander("🗂 Available Tables", expanded=False):
-    tables_df = run_query("SELECT name FROM sqlite_master WHERE type='table';")
-    st.dataframe(tables_df, use_container_width=True)
+
 
 # -------------------------------
 # Predefined Expert Queries
